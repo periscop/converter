@@ -1,0 +1,375 @@
+
+/*
+*												FIRST PAIR
+*/
+
+/*
+*  Function used in copying scoplib_matrix to an osl_relation.
+*  Assigns an int returned by SCOPVAL_set_si() to an element in osl_relation
+*  Usage: convert_int_set_si_scoplib2osl( osl_precision, osl_base, osl_offset,
+																					SCOPVAL_get_si(scoplib_address) );
+*/
+convert_int_set_si_scoplib2osl(int precision, void* value_base,
+																int value_offset, int i){
+
+	void * value = osl_int_address(precision, value_base, value_offset);
+
+	switch(precision){
+		case OSL_PRECISION_SP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long int *)value = (long int)i;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long int *)value = (long int)i;	// loss of precision??
+#elif  SCOPLIB_INT_T_GMP
+			*(long int *)value = (long int)i;	// loss of precision??
+#endif
+		break;
+
+		case OSL_PRECISION_DP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long long int *)value = (long long int)i;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long long int *)value = (long long int)i;
+#elif  SCOPLIB_INT_T_GMP
+			*(long long int *)value = (long long int)i; //loss of precision
+#endif
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+#ifdef SCOPLIB_INT_T_LONG
+			mpz_set_si(*(mpz_t *)value, i);
+#elif  SCOPLIB_INT_T_LONGLONG
+			mpz_set_si(*(mpz_t *)value, i);
+#elif  SCOPLIB_INT_T_GMP
+			mpz_set_si(*(mpz_t *)value, i);
+#endif
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+
+	}
+}
+
+
+/*
+*  Function used in copying osl_relation to a scoplib_matrix .
+*  Assigns an int returned by osl_int_get_si() to an element in scoplib_matrix 
+*  Usage: convert_int_set_si_osl2scoplib( osl_precision, scoblib_addr,
+																					osl_int_get_si(osl_base, offset) );
+*/
+convert_int_set_si_osl2scoplib(int osl_precision, void* value_base,
+																int i){
+
+	void * value = value_base;
+
+	switch(osl_precision){
+		case OSL_PRECISION_SP:
+			SCOPVAL_set_si( *(scoplib_int_t *)value, i );
+		break;
+
+		case OSL_PRECISION_DP:
+			SCOPVAL_set_si( *(scoplib_int_t *)value, i );
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			SCOPVAL_set_si( *(scoplib_int_t *)value, i );
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+
+	}
+}
+
+
+/*
+*												SECOND PAIR
+*/
+
+/*
+*  Function used in copying scoplib_matrix to a osl_relation.
+*  Assigns a value in a scoplib_matrix to a given offset in osl_relation 
+*  Usage: convert_int_assign_scoplib2osl(osl_precision, osl_base, osl_offset, 
+																					&scoplib_matrix[row][0], scoplib_col);
+*/
+convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
+																int dest_value_offset, 
+																void* src_value_base, int src_value_offset){
+
+	void * dest_value = osl_int_address(dest_precision, dest_value_base, dest_value_offset);
+	scoplib_int_t * src_value = (scoplib_int_t*)src_value_base+src_value_offset;
+
+	switch(dest_precision){
+		case OSL_PRECISION_SP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long int *)dest_value = *(long int*)src_value;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long int *)dest_value = *(long int*)src_value;	// loss of precision??
+#elif  SCOPLIB_INT_T_GMP
+			*(long int *)dest_value = *(long int*)src_value;	// loss of precision??
+#endif
+		break;
+
+		case OSL_PRECISION_DP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long long int *)dest_value = *(long long int*)src_value;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long long int *)dest_value = *(long long int*)src_value;
+#elif  SCOPLIB_INT_T_GMP
+			*(long long int *)dest_value = *(long long int*)src_value; //loss of precision??
+#endif
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+#ifdef SCOPLIB_INT_T_LONG
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+#elif  SCOPLIB_INT_T_LONGLONG
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+#elif  SCOPLIB_INT_T_GMP
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+#endif
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+
+	}
+}
+
+
+
+/*
+*  Function used in copying osl_relation to a scoplib_matrix.
+*  Assigns a value in a osl_relation at an offset, to a value in scoplib_matrix 
+*  Usage: convert_int_assign_osl2scoplib(	&scoplib_matrix[row][0], scoplib_col,
+																				osl_precision, osl_base, osl_offset);
+*/
+convert_int_assign_osl2scoplib(void* dest_value_base,
+																int dest_value_offset, int src_precision, 
+																void* src_value_base, int src_value_offset){
+
+	scoplib_int_t * dest_value = 
+										(scoplib_int_t*)dest_value_base+dest_value_offset;
+	void * src_value = osl_int_address(src_precision, 
+											src_value_base, src_value_offset);
+
+//TODO: replace all typcasts below with (scoplib_int_t*) ??
+
+#ifdef SCOPLIB_INT_T_IS_LONG
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			*(long int *)dest_value = *(long int*)src_value;
+		break;
+
+		case OSL_PRECISION_DP:
+			*(long int *)dest_value = *(long int*)src_value; //loss of precision?
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			*(long int *)dest_value = *(long int*)src_value; //loss of precision?
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+
+
+#elif SCOPLIB_INT_T_IS_LONGLONG
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			*(long long int *)dest_value = *(long long int*)src_value;
+		break;
+
+		case OSL_PRECISION_DP:
+			*(long long int *)dest_value = *(long long int*)src_value;
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			*(long long int *)dest_value = *(long long int*)src_value; //loss of precision?
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+
+
+#elif SCOPLIB_INT_T_IS_MP
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+
+		case OSL_PRECISION_DP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+#endif
+
+}
+
+/*
+*												THIRD PAIR
+*/
+
+/*
+*
+*/
+/*
+*  Function used in copying scoplib_matrix to a osl_relation.
+*  Assigns a value in scoplib_matrix, to an offset in osl_relation 
+*  Usage: convert_int_assign_osl2scoplib(osl_precision, osl_base, osl_offset,
+																			scoplib_matrix[row][col]);
+*/
+convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
+																int dest_value_offset, 
+																scoplib_int_t src ){
+
+	void * dest_value = osl_int_address(dest_precision, dest_value_base, dest_value_offset);
+
+	switch(dest_precision){
+		case OSL_PRECISION_SP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long int *)dest_value = (long int)src;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long int *)dest_value = (long int)src;	// loss of precision??
+#elif  SCOPLIB_INT_T_GMP
+			*(long int *)dest_value = (long int)src;	// loss of precision??
+#endif
+		break;
+
+		case OSL_PRECISION_DP:
+#ifdef SCOPLIB_INT_T_LONG
+			*(long long int *)dest_value = (long long int)src;
+#elif  SCOPLIB_INT_T_LONGLONG
+			*(long long int *)dest_value = (long long int)src;
+#elif  SCOPLIB_INT_T_GMP
+			*(long long int *)dest_value = (long long int)src; //loss of precision??
+#endif
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+#ifdef SCOPLIB_INT_T_LONG
+			mpz_set(*(mpz_t *)dest_value, (mpz_t)src);
+#elif  SCOPLIB_INT_T_LONGLONG
+			mpz_set(*(mpz_t *)dest_value, (mpz_t)src);
+#elif  SCOPLIB_INT_T_GMP
+			mpz_set(*(mpz_t *)dest_value, (mpz_t)src);
+#endif
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+
+	}
+}
+
+
+/*
+*
+*  Function used in copying osl_relation to a scoplib_matrix.
+*  Assigns a value at an offset in osl_relation, to a value in scoplib_matrix 
+*  Usage: convert_int_assign_osl2scoplib(&scoplib_matrix[row][col],
+																		osl_precision, osl_base, osl_offset);
+*/
+convert_int_assign_osl2scoplib(void* dest_value_base,
+																int src_precision, 
+																void* src_value_base, int src_value_offset){
+
+	scoplib_int_t * dest_value = (scoplib_int_t*)dest_value_base;
+	void * src_value = osl_int_address(src_precision, 
+											src_value_base, src_value_offset);
+
+//TODO: replace all typcasts below with (scoplib_int_t*) ??
+
+#ifdef SCOPLIB_INT_T_IS_LONG
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			*(long int *)dest_value = *(long int*)src_value;
+		break;
+
+		case OSL_PRECISION_DP:
+			*(long int *)dest_value = *(long int*)src_value; //loss of precision?
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			*(long int *)dest_value = *(long int*)src_value; //loss of precision?
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+
+
+#elif SCOPLIB_INT_T_IS_LONGLONG
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			*(long long int *)dest_value = *(long long int*)src_value;
+		break;
+
+		case OSL_PRECISION_DP:
+			*(long long int *)dest_value = *(long long int*)src_value;
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			*(long long int *)dest_value = *(long long int*)src_value; //loss of precision?
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+
+
+#elif SCOPLIB_INT_T_IS_MP
+	switch(src_precision){
+		case OSL_PRECISION_SP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+
+		case OSL_PRECISION_DP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+
+#ifdef OSL_GMP_IS_HERE
+		case OSL_PRECISION_MP:
+			mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
+		break;
+#endif	//OSL_GMP_IS_HERE
+
+		default:
+			OSL_error("unknown precision");
+		}
+
+#endif
+
+}

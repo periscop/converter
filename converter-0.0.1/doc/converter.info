@@ -1,0 +1,97 @@
+This is clay.info, produced by makeinfo version 4.13 from clay.texi.
+
+This document describes Clay, a tool and a library to perform code
+transformations in the polyhedral model.
+
+   It would be quite kind to refer at the present document in any
+publication that results from the use of Clay:
+
+     @TechReport{Bas12,
+       author =      {C\'edric Bastoul},
+       title =       {Clay: A Tool and a Library for Code Transformations in the Polyhedral Model},
+       month =       {April},
+       year =        2012,
+       institution = {Paris-Sud University, France}
+     }
+
+   Copyright (C) 2012 University of Paris-Sud.
+
+   Permission is granted to copy, distribute and/or modify this
+document under the terms of the GNU Free Documentation License, Version
+1.2 published by the Free Software Foundation; with no Invariant
+Sections, with no Front-Cover Texts, and with no Back-Cover Texts. To
+receive a copy of the GNU Free Documentation License, write to the Free
+Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307 USA.
+
+
+File: clay.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+OpenSCop
+********
+
+This document describes Clay, a tool and a library to perform code
+transformations in the polyhedral model.
+
+   It would be quite kind to refer at the present document in any
+publication that results from the use of Clay:
+
+     @TechReport{Bas12,
+       author =      {C\'edric Bastoul},
+       title =       {Clay: A Tool and a Library for Code Transformations in the Polyhedral Model},
+       month =       {April},
+       year =        2012,
+       institution = {Paris-Sud University, France}
+     }
+
+   Copyright (C) 2012 University of Paris-Sud.
+
+   Permission is granted to copy, distribute and/or modify this
+document under the terms of the GNU Free Documentation License, Version
+1.2 published by the Free Software Foundation; with no Invariant
+Sections, with no Front-Cover Texts, and with no Back-Cover Texts. To
+receive a copy of the GNU Free Documentation License, write to the Free
+Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307 USA.
+
+* Menu:
+
+* Introduction::
+* Clay Software::
+* Clay Library::
+* References::
+
+
+File: clay.info,  Node: Introduction,  Next: Clay Software,  Prev: Top,  Up: Top
+
+1 Introduction
+**************
+
+
+File: clay.info,  Node: Clay Software,  Next: Clay Library,  Prev: Introduction,  Up: Top
+
+2 Clay Software
+***************
+
+
+File: clay.info,  Node: Clay Library,  Next: References,  Prev: Clay Software,  Up: Top
+
+3 Clay Library
+**************
+
+
+File: clay.info,  Node: References,  Prev: Clay Library,  Up: Top
+
+4 References
+************
+
+
+
+Tag Table:
+Node: Top1049
+Node: Introduction2188
+Node: Clay Software2303
+Node: Clay Library2429
+Node: References2551
+
+End Tag Table
