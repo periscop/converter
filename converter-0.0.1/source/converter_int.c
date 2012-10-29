@@ -5,6 +5,7 @@
 #include "converter/converter.h"
 #include <stdlib.h> 
 #include <limits.h> 
+#include <math.h> 
 
 
 #ifdef OSL_GMP_IS_HERE
@@ -17,9 +18,12 @@
 #ifdef OSL_GMP_IS_HERE
 /*
 * Function to check if mpz_t fits inside a long long int
+*
+* \param[in] x     mpz_t to check
+* \return          1 if yes, 0 other wise
+* http://cpansearch.perl.org/src/BUBAFLUB/Math-Primality-0.04/spec/bpsw/trn.c
 */
 
-//http://cpansearch.perl.org/src/BUBAFLUB/Math-Primality-0.04/spec/bpsw/trn.c
 int convert_mpz_fits_llong_p(mpz_t x){
 
   mpz_t llMax;
@@ -42,6 +46,9 @@ int convert_mpz_fits_llong_p(mpz_t x){
 
 /*
 * Function to convert an mpz into a long long int
+*
+* \param[in] x     mpz_t  to convert
+* \return          converted long long int
 */
 
 long long int convert_mpz_get_lld(mpz_t x){
@@ -74,6 +81,9 @@ long long int convert_mpz_get_lld(mpz_t x){
 
 /*
 * Function to assign a long long it to an mpz_t
+*
+* \param[in] x     mpz_t  to convert
+* \return          converted long long int
 */
 
 void convert_mpz_set_lld(mpz_t mpz, long long int x){
@@ -93,6 +103,14 @@ void convert_mpz_set_lld(mpz_t mpz, long long int x){
 /*
 *  Function used in copying scoplib_matrix to a osl_relation.
 *  Assigns a value in scoplib_matrix, to an offset in osl_relation 
+*
+*
+* \param[in] dest_precision    precision of the destination osl relation
+* \param[in] dest_value_base   base address in the relation (row start)
+* \param[in] dest_value_offset offset in the relation (column position)
+* \param[in] src               source scoplib_int to convert from
+* \return                      void
+*
 *  Usage: convert_int_assign_scoplib2osl(osl_precision, osl_base, osl_offset,
                                       scoplib_matrix[row][col]);
 */
@@ -111,7 +129,7 @@ void convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
        CONVERTER_error("Conversion of longlong into long. Loss of information");
       else
         *(long int *)dest_value = (long int)src;  // loss of precision??
-#elif defined(  SCOPLIB_INT_T_IS_GMP)
+#elif defined(  SCOPLIB_INT_T_IS_MP)
       if( !mpz_fits_slong_p(src))
        CONVERTER_error("Conversion of MP-type into long. Loss of information");
       else
@@ -124,7 +142,7 @@ void convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
       *(long long int *)dest_value = (long int)src;
 #elif defined(  SCOPLIB_INT_T_IS_LONGLONG)
       *(long long int *)dest_value = (long long int)src;
-#elif defined(  SCOPLIB_INT_T_IS_GMP)
+#elif defined(  SCOPLIB_INT_T_IS_MP)
       if(!convert_mpz_fits_llong_p(src))
        CONVERTER_error("Conversion of MP-type into longlong. Loss of information");
       else//loss of precision??
@@ -138,7 +156,7 @@ void convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
       mpz_set_si(*(mpz_t *)dest_value, src);
 #elif defined(  SCOPLIB_INT_T_IS_LONGLONG)
       convert_mpz_set_lld(*(mpz_t *)dest_value, src);
-#elif defined(  SCOPLIB_INT_T_IS_GMP)
+#elif defined(  SCOPLIB_INT_T_IS_MP)
       mpz_set(*(mpz_t *)dest_value, src);
 #endif
     break;
@@ -155,6 +173,14 @@ void convert_int_assign_scoplib2osl(int dest_precision, void* dest_value_base,
 *
 *  Function used in copying osl_relation to a scoplib_matrix.
 *  Assigns a value at an offset in osl_relation, to a value in scoplib_matrix 
+*
+*
+* \param[in] dest_base_value    scoplib matrix address to assign to 
+* \param[in] src_precision      precision of the source osl relation
+* \param[in] src_value_base     base address in the source osl relation (row address)
+* \param[in] src_value_offset   offset after the base address (column position)
+* \return                       void
+*
 *  Usage: convert_int_assign_osl2scoplib(&scoplib_matrix[row][col],
                                     osl_precision, osl_base, osl_offset);
 */
@@ -230,11 +256,12 @@ void convert_int_assign_osl2scoplib(void* dest_value_base,
     break;
 
     case OSL_PRECISION_DP:
-      mpz_set_lld(*(mpz_t *)dest_value, *(long long int *)src_value);
+      convert_mpz_set_lld(*(mpz_t *)dest_value, *(long long int *)src_value);
     break;
 
 #ifdef OSL_GMP_IS_HERE
     case OSL_PRECISION_MP:
+      //printf("convertint mp -> mp\n");
       mpz_set(*(mpz_t *)dest_value, *(mpz_t *)src_value);
     break;
 #endif  //OSL_GMP_IS_HERE

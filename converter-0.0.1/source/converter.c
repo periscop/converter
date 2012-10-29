@@ -28,17 +28,23 @@ int main( int argc, char* argv[]){
   }
 
 
-  osl_scop_p scop0 = NULL;
+  scoplib_scop_p scop0 = NULL;
   osl_scop_p scop1 = NULL;
 
   if(strtol(argv[1],NULL, 10)==0){
       printf("reading scoplib_scop\n");
       scop0 = scoplib_scop_read( infile );
       //scoplib_scop_print_structure(stdout, scop0, 0);
+      //scoplib_scop_print_dot_scop(stdout, scop0);
       printf("read scoplib_scop\n");
       scop1 = convert_scop_scoplib2osl(scop0);
       printf("converted scoplib_scop to osl_scop\n");
-      //exit(0);
+	  // print osl scop to file
+	  sprintf(o_filename, "%s.osl", argv[2]);
+	  FILE *outfile0 = fopen(o_filename, "w+");
+	  osl_scop_print(outfile0, scop1);
+	  fclose(outfile0);
+	  printf("OSL scop printed to file\n");
   }
   else{
     printf("reading osl_scop\n");
@@ -54,12 +60,13 @@ int main( int argc, char* argv[]){
   //convert osl to scoplib
   scoplib_scop_p scop2 = convert_scop_osl2scoplib(scop1);
   if(scop2==NULL)
-  printf("OSL to Scoplib conversion failed\n");
+  	printf("OSL to Scoplib conversion failed\n");
   //scoplib_scop_print_structure(stdout, scop2, 0);
   //print scoplib scop to file
   sprintf(o_filename, "%s.scoplib", argv[2]);
   FILE *outfile = fopen(o_filename, "w+");
   scoplib_scop_print_dot_scop(outfile, scop2);
+  //printf("scoptagoptions:\n%s\n", scop2->optiontags);
   fclose(outfile);
   printf("Scoplib scop printed to file\n");
   //manually generate code and compare to original
@@ -72,6 +79,8 @@ int main( int argc, char* argv[]){
 
   //scoplib_scop_print_structure(stdout, scop3, 0);
   //printf("Scoplib scop read from file\n");
+
+
 
 
   // convert scoplib to osl
@@ -89,21 +98,31 @@ int main( int argc, char* argv[]){
   printf("OSL scop printed to file\n");
   //manually generate code and compare to original
 
+
+
+
   
   if(strtol(argv[1],NULL, 10)==1){
+
     printf("scop1 language = %s\n", scop1->language);
     CONVERTER_strdup(scop4->language, scop1->language);
+
     if( convert_osl_scop_equal(scop1, scop4) )
-    printf("OSL -> Scoplib -> OSL works  :D\n");
+    	printf("OSL -> Scoplib -> OSL works  :D\n");
     else
-    printf("OSL -> Scoplib -> OSL failed :(\n");
+    	printf("OSL -> Scoplib -> OSL failed :(\n");
+
   }
   else{
+
     if( convert_scoplib_scop_equal(scop0, scop2) )
-    printf("Scoplib -> OSL -> Scoplib works  :D\n");
+    	printf("Scoplib -> OSL -> Scoplib works  :D\n");
     else
-    printf("Scoplib -> OSL -> Scoplib failed :(\n");
+    	printf("Scoplib -> OSL -> Scoplib failed :(\n");
+
   }
+
+
 
   osl_scop_free( scop1 );
   osl_scop_free( scop4 );

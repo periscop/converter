@@ -131,7 +131,7 @@ dnl /**************************************************************************
 dnl  *                   Where is the OpenScop Library?                       *
 dnl  **************************************************************************/
 
-AX_SUBMODULE(osl,system|build|bundled,system)
+AX_SUBMODULE(osl,system|build|bundled,bundled)
 
 AC_SUBST(OSL_CPPFLAGS)
 AC_SUBST(OSL_LDFLAGS)
@@ -161,7 +161,7 @@ dnl /**************************************************************************
 dnl  *                   Where is the Scoplib Library?                       *
 dnl  **************************************************************************/
 
-AX_SUBMODULE(scoplib,system|build|bundled,system)
+AX_SUBMODULE(scoplib,system|build|bundled,bundled)
 
 AC_SUBST(SCOPLIB_CPPFLAGS)
 AC_SUBST(SCOPLIB_LDFLAGS)
@@ -185,6 +185,36 @@ system)
 	SCOPLIB_LIBS="$with_scoplib_exec_prefix/lib/libscoplib.la -lscoplib"
 esac
 AM_CONDITIONAL(BUNDLED_SCOPLIB, test $with_scoplib = bundled)
+
+
+dnl /**************************************************************************
+dnl  *                   Where is the Candl Library?                       *
+dnl  **************************************************************************/
+
+AX_SUBMODULE(candl,system|build|bundled,bundled)
+
+AC_SUBST(CANDL_CPPFLAGS)
+AC_SUBST(CANDL_LDFLAGS)
+AC_SUBST(CANDL_LIBS)
+case "$with_candl" in
+bundled)
+	CANDL_CPPFLAGS="-I$srcdir/candl/include -Icandl/include"
+	CANDL_LIBS="$srcdir/candl/source/libcandl.la"
+	;;
+build)
+	CANDL_CPPFLAGS="-I$candl_srcdir/include -I$with_candl_builddir/include"
+	CANDL_LIBS="$with_candl_builddir/libcandl.la"
+	;;
+system)
+	if test "x$with_candl_prefix" != "x"; then
+		CANDL_CPPFLAGS="-I$with_candl_prefix/include"
+	fi
+	if test "x$with_candl_exec_prefix" != "x"; then
+		CANDL_LDFLAGS="-L$with_candl_exec_prefix/lib"
+	fi
+	CANDL_LIBS="$with_candl_exec_prefix/lib/libcandl.la -lcandl"
+esac
+AM_CONDITIONAL(BUNDLED_CANDL, test $with_candl = bundled)
 
 dnl /**************************************************************************
 dnl  *                            Substitutions                               *

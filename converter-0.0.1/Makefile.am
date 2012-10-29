@@ -56,7 +56,9 @@ lib_LTLIBRARIES = libconverter.la
 #############################################################################
 
 pkginclude_HEADERS = \
-	include/converter/converter.h
+	include/converter/converter.h \
+	include/converter/converter_int.h \
+	include/converter/old_candl_dependence.h
 
 DEFAULT_INCLUDES = -I.
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
@@ -65,18 +67,23 @@ YFLAGS = -y -d
 
 #############################################################################
 
-libconverter_la_LIBADD   = @OSL_LIBS@ @SCOPLIB_LIBS@ $(OSL_LA)
-libconverter_la_CPPFLAGS = @OSL_CPPFLAGS@ @SCOPLIB_CPPFLAGS@ -g
-libconverter_la_LDFLAGS  = @OSL_LDFLAGS@ @SCOPLIB_LDFLAGS@
-libconverter_la_SOURCES  =
+libconverter_la_LIBADD   = @OSL_LIBS@ @SCOPLIB_LIBS@ @CANDL_LIBS@ $(OSL_LA)
+libconverter_la_CPPFLAGS = @OSL_CPPFLAGS@ @SCOPLIB_CPPFLAGS@ @CANDL_CPPFLAGS@ -g
+libconverter_la_LDFLAGS  = @OSL_LDFLAGS@ @SCOPLIB_LDFLAGS@ @CANDL_LDFLAGS@
+libconverter_la_SOURCES  = \
+			source/converter.c \
+			source/osl2scoplib.c \
+			source/scoplib2osl.c \
+			source/old_candl_dependence.c \
+			source/converter_int.c	
 
 #############################################################################
 
-LDADD             = @OSL_LIBS@ @SCOPLIB_LIBS@ libconverter.la
-converter_CPPFLAGS     = @OSL_CPPFLAGS@ @SCOPLIB_CPPFLAGS@ -g
-converter_LDFLAGS      = @OSL_LDFLAGS@ @SCOPLIB_LDFLAGS@ # TO BE REMOVED
+LDADD             = @OSL_LIBS@ @SCOPLIB_LIBS@ @CANDL_LIBS@ libconverter.la
+converter_CPPFLAGS     = @OSL_CPPFLAGS@ @SCOPLIB_CPPFLAGS@ @CANDL_CPPFLAGS@ -g
+converter_LDFLAGS      = @OSL_LDFLAGS@ @SCOPLIB_LDFLAGS@ @CANDL_LDFLAGS@ # TO BE REMOVED
 converter_DEPENDENCIES = libconverter.la
-converter_SOURCES      = source/converter.c source/osl2scoplib.c source/scoplib2osl.c source/converter_int.c
+converter_SOURCES      = source/converter.c source/osl2scoplib.c source/scoplib2osl.c source/old_candl_dependence.c source/converter_int.c
 
 #############################################################################
 
