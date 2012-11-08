@@ -131,7 +131,7 @@ dnl /**************************************************************************
 dnl  *                   Where is the OpenScop Library?                       *
 dnl  **************************************************************************/
 
-AX_SUBMODULE(osl,system|build|bundled,system)
+AX_SUBMODULE(osl,system|build|bundled,bundled)
 
 AC_SUBST(OSL_CPPFLAGS)
 AC_SUBST(OSL_LDFLAGS)
@@ -161,7 +161,7 @@ dnl /**************************************************************************
 dnl  *                   Where is the Scoplib Library?                       *
 dnl  **************************************************************************/
 
-AX_SUBMODULE(scoplib,system|build|bundled,system)
+AX_SUBMODULE(scoplib,system|build|bundled,bundled)
 
 AC_SUBST(SCOPLIB_CPPFLAGS)
 AC_SUBST(SCOPLIB_LDFLAGS)
