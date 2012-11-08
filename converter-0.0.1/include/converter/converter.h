@@ -17,6 +17,11 @@
   fprintf(stderr,"[converter] Warning: "msg" (%s).\n", __func__); \
   }while(0)
 
+# define CONVERTER_info(msg)                                               \
+         do {                                                              \
+           fprintf(stderr,"[converter] Info: "msg" (%s).\n", __func__);    \
+         } while (0)
+
 #define CONVERTER_malloc(ptr, type, size)                         \
   do {                                                            \
            if (((ptr) = (type)malloc(size)) == NULL)              \
