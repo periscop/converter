@@ -218,7 +218,7 @@ int is_array(int id, scoplib_statement_p in_stmt){
 
           //one dimensional array; single row entry in matrix
           int j=0;
-          for(j=1; j< in_stmt->write->NbColumns; j++){//search after the 1st col
+          for(j=1; j< in_stmt->write->NbColumns; j++){//after the 1st col
             if(in_stmt->write->p[i][j] != 0) //non-zero first-dimension access
               is_array=1;
           }
@@ -359,8 +359,10 @@ int convert_get_scoplib_access_dimensions( scoplib_matrix_p m,
 /*
 * converts access matrix
 */
-osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix, scoplib_matrix_p ctx,
-                                                scoplib_statement_p in_stmt, int type){
+osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix,
+                                                scoplib_matrix_p ctx,
+                                                scoplib_statement_p in_stmt,
+                                                int type){
 
   int i=0;
   int j=0;
@@ -470,7 +472,7 @@ osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix, scop
           else  // input dimensions + parameters + constant
             //osl_int_set_si(rl->precision, rl->m[j+1], k, m->p[m_row][k-nb_output_dims]);
             convert_int_assign_scoplib2osl(rl->precision, rl->m[j+1], k,
-                                                m->p[m_row][k-nb_output_dims]);
+                                              m->p[m_row][k-nb_output_dims]);
         }
 
       } // end for each row
@@ -553,32 +555,34 @@ osl_statement_p convert_statement_scoplib2osl( scoplib_statement_p in_stmt,
 
     //domain
     tmp_stmt->domain = convert_domain_scoplib2osl(s->domain, in_ctx);
-    osl_relation_print(stdout,tmp_stmt->domain);
+    //osl_relation_print(stdout,tmp_stmt->domain);
 
     //scattering
     tmp_stmt->scattering = convert_scattering_scoplib2osl(s->schedule, in_ctx);
-    osl_relation_print(stdout,tmp_stmt->scattering);
+    //osl_relation_print(stdout,tmp_stmt->scattering);
 
     //access  //TODO: make generic append(read) append(write) ?
     //scoplib_matrix_print_structure(stdout, s->read, 0);
     tmp_stmt->access = convert_access_scoplib2osl(s->read, in_ctx, in_stmt,
                                                   OSL_TYPE_READ);
-    printf("read list\n");
-    osl_relation_list_print(stdout, tmp_stmt->access);
+    //printf("read list\n");
+    //osl_relation_list_print(stdout, tmp_stmt->access);
     osl_relation_list_p tmp_rl = tmp_stmt->access;
     for(; tmp_rl && tmp_rl->next; ) 
       tmp_rl = tmp_rl->next;
     if(!tmp_rl){
-    //scoplib_matrix_print_structure(stdout, s->write, 0);
-    tmp_stmt->access = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, OSL_TYPE_WRITE);
-    printf("write list, after readlist=NULL\n");
-    osl_relation_list_print(stdout, tmp_stmt->access);
+      //scoplib_matrix_print_structure(stdout, s->write, 0);
+      tmp_stmt->access = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, 
+                                                          OSL_TYPE_WRITE);
+      //printf("write list, after readlist=NULL\n");
+      //osl_relation_list_print(stdout, tmp_stmt->access);
     }
     else{
-    //scoplib_matrix_print_structure(stdout, s->write, 0);
-    tmp_rl->next = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, OSL_TYPE_WRITE);
-    printf("write list, after readlist\n");
-    osl_relation_list_print(stdout, tmp_rl->next);
+      //scoplib_matrix_print_structure(stdout, s->write, 0);
+      tmp_rl->next = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, 
+                                                         OSL_TYPE_WRITE);
+      //printf("write list, after readlist\n");
+      //osl_relation_list_print(stdout, tmp_rl->next);
     }
 
     //body
@@ -590,10 +594,11 @@ osl_statement_p convert_statement_scoplib2osl( scoplib_statement_p in_stmt,
 
     tmp_stmt->body = convert_body_scoplib2osl(s->nb_iterators, s->iterators,
                                               s->body);
-    if(tmp_stmt->body){
-      printf("body\n");
-      osl_body_print(stdout, tmp_stmt->body->data);
-    }
+    //if(tmp_stmt->body){
+    //  printf("body\n");
+    //  osl_body_print(stdout, tmp_stmt->body->data);
+    //}
+
     //usr
     tmp_stmt->usr = NULL;
 
@@ -612,14 +617,15 @@ osl_statement_p convert_statement_scoplib2osl( scoplib_statement_p in_stmt,
 }
 
 
-int convert_osl_relation_list_equal(osl_relation_list_p l1, osl_relation_list_p l2) {
+int convert_osl_relation_list_equal(osl_relation_list_p l1,
+                                        osl_relation_list_p l2) {
 
   int l1_size = osl_relation_list_count(l1);
   int l2_size = osl_relation_list_count(l2);
   
   if(l1_size != l2_size){
-    printf("relation_list sizes are not the same\n");
-    return 0;
+    CONVERTER_error("relation_list sizes are not the same\n");
+    //return 0;
   }
 
   for(; l1; l1 = l1->next){
@@ -647,40 +653,40 @@ int convert_osl_statement_equal(osl_statement_p s1, osl_statement_p s2) {
   
   if (((s1->next != NULL) && (s2->next == NULL)) ||
       ((s1->next == NULL) && (s2->next != NULL))) {
-    OSL_info("number of statements is not the same"); 
+    CONVERTER_info("number of statements is not the same"); 
     return 0;
   }
 
   if ((s1->next != NULL) && (s2->next != NULL)) {
     if (!convert_osl_statement_equal(s1->next, s2->next)) {
-      OSL_info("statements are not the same"); 
+      CONVERTER_info("statements are not the same"); 
       return 0;
     }
   }
     
   if (!osl_relation_equal(s1->domain, s2->domain)) {
-    OSL_info("statement domains are not the same"); 
+    CONVERTER_info("statement domains are not the same"); 
     osl_relation_print(stdout, s1->domain);
     osl_relation_print(stdout, s2->domain);
     return 0;
   }
 
   if (!osl_relation_equal(s1->scattering, s2->scattering)) {
-    OSL_info("statement scatterings are not the same"); 
+    CONVERTER_info("statement scatterings are not the same"); 
     osl_relation_print(stdout, s1->scattering);
     osl_relation_print(stdout, s2->scattering);
     return 0;
   }
 
   if (!convert_osl_relation_list_equal(s1->access, s2->access)) {
-    OSL_info("statement accesses are not the same"); 
+    CONVERTER_info("statement accesses are not the same"); 
     osl_relation_list_print(stdout, s1->access);
     osl_relation_list_print(stdout, s2->access);
     return 0;
   }
 
   if (!osl_generic_equal(s1->body, s2->body)) {
-    OSL_info("statement bodies are not the same"); 
+    CONVERTER_info("statement bodies are not the same"); 
     osl_generic_print(stdout, s1->body);
     osl_generic_print(stdout, s2->body);
     return 0;
@@ -695,49 +701,49 @@ int convert_osl_scop_equal(osl_scop_p s1, osl_scop_p s2) {
       return 1;
 
     if (s1->version != s2->version) {
-      OSL_info("versions are not the same"); 
+      CONVERTER_info("versions are not the same"); 
       return 0;
     }
-    else
-      printf("osl_scop versions equal\n");
+    //else
+    //  printf("osl_scop versions equal\n");
 
     if (strcmp(s1->language, s2->language) != 0) {
-      OSL_info("languages are not the same"); 
+      CONVERTER_info("languages are not the same"); 
       return 0;
     }
-    else
-      printf("osl_scop language equal\n");
+    //else
+    //  printf("osl_scop language equal\n");
 
     if (!osl_relation_equal(s1->context, s2->context)) {
-      OSL_info("contexts are not the same"); 
+      CONVERTER_info("contexts are not the same"); 
       return 0;
     }
-    else
-      printf("osl_scop context equal\n");
+    //else
+    //  printf("osl_scop context equal\n");
 
     if (!osl_generic_equal(s1->parameters, s2->parameters)) {
-      OSL_info("parameters are not the same"); 
+      CONVERTER_info("parameters are not the same"); 
       return 0;
     }
-    else
-      printf("osl_scop parameters equal\n");
+    //else
+    //  printf("osl_scop parameters equal\n");
 
     if (!convert_osl_statement_equal(s1->statement, s2->statement)) {
-      OSL_info("statements are not the same"); 
+      CONVERTER_info("statements are not the same"); 
       return 0;
     }
-    else
-      printf("osl_scop statements equal\n");
+    //else
+    //  printf("osl_scop statements equal\n");
 
     //if (!osl_interface_equal(s1->registry, s2->registry)) {
-     // OSL_info("registries are not the same"); 
+     // CONVERTER_info("registries are not the same"); 
       //return 0;
     //}
     //else
      // printf("osl_scop registry equal\n");
 
     //if (!osl_generic_equal(s1->extension, s2->extension)) {
-     // OSL_info("extensions are not the same"); 
+     // CONVERTER_info("extensions are not the same"); 
       //return 0;
     //}
     //else
@@ -768,7 +774,7 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
 
   int i=0;
   if(inscop==NULL){
-    fprintf(stderr, "Received NULL scop\n");
+    CONVERTER_warning("Received NULL scop\n");
     return NULL;    //
   }
 
@@ -785,8 +791,8 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
     //printf("old_context:\n");
     //scoplib_matrix_print(stdout, inscop->context);
     tmp_scop->context = convert_matrix_scoplib2osl(inscop->context);
-    printf("new_context:\n");
-    osl_relation_print(stdout, tmp_scop->context);
+    //printf("new_context:\n");
+    //osl_relation_print(stdout, tmp_scop->context);
   }
   else{
     return output_scop; //NULL
@@ -794,13 +800,15 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
 
   //parameters
   if(inscop->nb_parameters > 0 && inscop->parameters!=NULL ){
+
     char** params_cpy = NULL;
-     OSL_malloc(params_cpy, char **, sizeof(char *) * (inscop->nb_parameters+ 1)); 
+    OSL_malloc(params_cpy, char **, 
+    sizeof(char *) * (inscop->nb_parameters+ 1)); 
     params_cpy[inscop->nb_parameters] = NULL;
-    printf("nb_parameters:%d\n", inscop->nb_parameters);
+    //printf("nb_parameters:%d\n", inscop->nb_parameters);
     for(i=0; i< inscop->nb_parameters; i++){
       OSL_strdup(params_cpy[i], inscop->parameters[i]);
-      printf("parameters[%d]: %s\n", i, params_cpy[i]);
+      //printf("parameters[%d]: %s\n", i, params_cpy[i]);
     }
     osl_strings_p params = osl_strings_malloc();
     params->string = params_cpy;
@@ -814,7 +822,6 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
   else
     CONVERTER_warning("No parameters detected\n");
   
-  //arrays
   //statement
   if(inscop->statement){
     tmp_scop->statement = convert_statement_scoplib2osl(inscop->statement,
@@ -828,6 +835,7 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
 
 
   //optiontags
+  //arrays
   char* content = scoplib_scop_tag_content (inscop, "<arrays>", "</arrays>");
   if(content==NULL)
     tmp_scop->extension = NULL;

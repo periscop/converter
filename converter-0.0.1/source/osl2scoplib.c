@@ -4,7 +4,7 @@
 #include "osl/body.h"
 #include "osl/generic.h"
 #include "osl/extensions/arrays.h"
-#include <string.h>   // warnings for strlen() incomatible implicit declaration
+#include <string.h>  // warnings for strlen() incomatible implicit declaration
 #include "osl/macros.h"
 
 #include "scoplib/scop.h"
@@ -106,7 +106,8 @@ scoplib_matrix_p convert_scattering_osl2scoplib(osl_relation_p scattering){
     //copy input_dims and the rest
     for(i=0; i < scattering->nb_rows; i++)
       for(j=scattering->nb_output_dims+1; j < scattering->nb_columns; j++)
-        convert_int_assign_osl2scoplib(&scat->p[i][j-(scattering->nb_output_dims)],
+        convert_int_assign_osl2scoplib(
+                            &scat->p[i][j-(scattering->nb_output_dims)],
                             scattering->precision, scattering->m[i], j); 
         //scat->p[i][j-(scattering->nb_output_dims)] = 
         //osl_int_get_si(scattering->precision, scattering->m[i],j); 
@@ -188,17 +189,21 @@ scoplib_matrix_p convert_access_osl2scoplib(osl_relation_list_p head,
     if(head->elt->nb_local_dims)
       CONVERTER_error("Cannot handle Access Local Dimensions. Abort.\n");
 
-    if (head->elt != NULL && (head->elt->type == type || head->elt->type == type2)){
+    if (  head->elt != NULL 
+          && (head->elt->type == type || head->elt->type == type2)){
       
-      if(type==OSL_TYPE_READ && head->elt->type == type2) //type2 only may_write
+      //type2 only may_write
+      if(type==OSL_TYPE_READ && head->elt->type == type2) 
         CONVERTER_error("Unknown Access type!! Abort.");
+
       // get array id
       // assuming first row, last element: TODO:search for it ??
       int array_id = 0;
       //int array_id = osl_int_get_si(precision,
       //      head->elt->m[0],head->elt->nb_columns-1);
       convert_int_assign_osl2scoplib(&array_id, 
-                    head->elt->precision, head->elt->m[0],head->elt->nb_columns-1);
+                    head->elt->precision, head->elt->m[0],
+                        head->elt->nb_columns-1);
 
       int first_access = 1;
       // arrange dimensions in order ????
@@ -221,7 +226,8 @@ scoplib_matrix_p convert_access_osl2scoplib(osl_relation_list_p head,
       //copy matrix, but skip output_dims
       //m_read->p[i][j-head->elt->nb_output_dims] = 
        //   osl_int_get_si(precision,head->elt->m[k],j);
-          convert_int_assign_osl2scoplib(&m_read->p[i][j-head->elt->nb_output_dims],
+          convert_int_assign_osl2scoplib(
+                                &m_read->p[i][j-head->elt->nb_output_dims],
                                 head->elt->precision, head->elt->m[k], j);
         }
       }
@@ -317,8 +323,9 @@ scoplib_statement_p convert_statement_osl2scoplib(osl_statement_p p,
     // allocate read
     //if(nb_rows_read){
     //TODO: could be done more neatly with a relation_filter!
-    stmt->read = convert_access_osl2scoplib( p->access, OSL_TYPE_READ, 0, //dummy
-                                          nb_rows_read, nb_columns_read);
+    stmt->read = convert_access_osl2scoplib( p->access, OSL_TYPE_READ,
+                                             0, //dummy
+                                             nb_rows_read, nb_columns_read);
     //printf("Read_ACcess scoplib:\n");
     //scoplib_matrix_print_structure(stdout, stmt->read, 0);
     //}
@@ -500,11 +507,11 @@ int convert_scoplib_strings_equal(char** s1, char** s2){
 
   //if( (*s1_cpy==NULL) && (*s2_cpy!=NULL) ||
    //   (*s1_cpy!=NULL) && (*s2_cpy==NULL) ){
-    //CONVERTER_warning("scoplib sizes of strings not equal\n");
+    //CONVERTER_info("scoplib sizes of strings not equal\n");
     //return 0;
   //}
   if( nb_strings_1 != nb_strings_2){
-    CONVERTER_warning("scoplib sizes of strings not equal\n");
+    CONVERTER_info("scoplib sizes of strings not equal\n");
     printf("s1_size=%d, s2_size=%d\n", nb_strings_1, nb_strings_1);
     return 0;
   }
@@ -512,7 +519,7 @@ int convert_scoplib_strings_equal(char** s1, char** s2){
   for(i=0; i< nb_strings_1; i++){
   //strcmp returns non-zero if strings not equal
     if(strcmp(s1[i], s2[i]) ){
-      CONVERTER_warning("scoplib two strings not equal\n");
+      CONVERTER_info("scoplib two strings not equal\n");
       printf("s1: %s, s2: %s\n", s1[i], s2[i]);
       return 0;
     }
@@ -546,101 +553,103 @@ convert_scoplib_matrix_equal(scoplib_matrix_p m1, scoplib_matrix_p m2)
 }
 
 
-int convert_scoplib_matrix_list_equal( scoplib_matrix_list_p ml1, scoplib_matrix_list_p ml2){
+int convert_scoplib_matrix_list_equal( scoplib_matrix_list_p ml1, 
+                                       scoplib_matrix_list_p ml2){
 
   if(ml1==ml2)
     return 1;
 
   if (((ml1->next != NULL) && (ml2->next == NULL)) ||
      ((ml1->next == NULL) && (ml2->next != NULL))) { 
-      CONVERTER_warning("scoplib sizes of matrid_lists are not the same\n");
+      CONVERTER_info("scoplib sizes of matrid_lists are not the same\n");
       return 0;
   } 
 
   if ((ml1->next != NULL) && (ml2->next != NULL)) {
     if (!convert_scoplib_matrix_list_equal(ml1->next, ml2->next)) {
-      CONVERTER_warning("scoplib matrid_lists are not the same\n");
+      CONVERTER_info("scoplib matrid_lists are not the same\n");
       return 0;
     }
   }
 
   if( !convert_scoplib_matrix_equal(ml1->elt, ml2->elt) ){
-    CONVERTER_warning("scoplib matrixes not equal\n");
+    CONVERTER_info("scoplib matrixes not equal\n");
     return 0;
   }
   
   return 1;
 }
 
-int convert_scoplib_statement_equal(scoplib_statement_p s1, scoplib_statement_p s2){
+int convert_scoplib_statement_equal(scoplib_statement_p s1,
+                                       scoplib_statement_p s2){
 
   if(s1==s2)
     return 1;
 
   if (((s1->next != NULL) && (s2->next == NULL)) ||
      ((s1->next == NULL) && (s2->next != NULL))) { 
-      CONVERTER_warning("scoplib number of statements are not the same\n");
+      CONVERTER_info("scoplib number of statements are not the same\n");
       return 0;
   } 
 
   if ((s1->next != NULL) && (s2->next != NULL)) {
     if (!convert_scoplib_statement_equal(s1->next, s2->next)) {
-      CONVERTER_warning("scoplib statements is not the same\n");
+      CONVERTER_info("scoplib statements is not the same\n");
       return 0;
     }
   }
 
   if( !convert_scoplib_matrix_list_equal(s1->domain, s2->domain) ){
-    CONVERTER_warning("scoplib statements domains not equal\n");
+    CONVERTER_info("scoplib statements domains not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement domains are the same\n");
+  //else
+  //  printf("scoplib statement domains are the same\n");
 
   if( !convert_scoplib_matrix_equal(s1->schedule, s2->schedule) ){
-    CONVERTER_warning("scoplib statements scatterings not equal\n");
+    CONVERTER_info("scoplib statements scatterings not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement scatterings are the same\n");
+  //else
+  //  printf("scoplib statement scatterings are the same\n");
 
   if( !convert_scoplib_matrix_equal(s1->read, s2->read) ){
-    CONVERTER_warning("scoplib statements read matrixes not equal\n");
+    CONVERTER_info("scoplib statements read matrixes not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement read_matrixes are the same\n");
+  //else
+  //  printf("scoplib statement read_matrixes are the same\n");
 
   if( !convert_scoplib_matrix_equal(s1->write, s2->write) ){
-    CONVERTER_warning("scoplib statements write matrixes not equal\n");
+    CONVERTER_info("scoplib statements write matrixes not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement write_matrixes are the same\n");
+  //else
+  //  printf("scoplib statement write_matrixes are the same\n");
 
   if( s1->nb_iterators != s2->nb_iterators ){
-    CONVERTER_warning("scoplib statements nb_iterators not equal\n");
+    CONVERTER_info("scoplib statements nb_iterators not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement nb_tertaros are the same\n");
+  //else
+  //  printf("scoplib statement nb_tertaros are the same\n");
 
   if( !convert_scoplib_strings_equal(s1->iterators, s2->iterators) ){
-    CONVERTER_warning("scoplib statements iterators not equal\n");
+    CONVERTER_info("scoplib statements iterators not equal\n");
     convert_scoplib_strings_print(s1->iterators);
     convert_scoplib_strings_print(s2->iterators);
     return 0;
   }
-  else
-    printf("scoplib statement iterators  are the same\n");
+  //else
+  //  printf("scoplib statement iterators  are the same\n");
 
   //strcmp returns non-zero if strings not equal
   if( strcmp(s1->body, s2->body) ){
-    CONVERTER_warning("scoplib statements bodies not equal\n");
+    CONVERTER_info("scoplib statements bodies not equal\n");
     return 0;
   }
-  else
-    printf("scoplib statement bodies are the same\n");
+  //else
+  //  printf("scoplib statement bodies are the same\n");
 
   return 1;
 }
@@ -652,59 +661,59 @@ int convert_scoplib_scop_equal( scoplib_scop_p s1, scoplib_scop_p s2){
     return 1;
 
   if (((s1 == NULL) && (s2 != NULL)) || ((s1 != NULL) && (s2 == NULL))){
-    CONVERTER_warning("unequal scops! one is NULL!\n");
+    CONVERTER_info("unequal scops! one is NULL!\n");
     return 0;
   }
 
   if( !scoplib_matrix_equal(s1->context, s2->context) ){
-    CONVERTER_warning("contexts not same! \n");
+    CONVERTER_info("contexts not same! \n");
     return 0;
   }
-  else
-    printf("scoplib scop contexts  are the same\n");
+  //else
+  //  printf("scoplib scop contexts  are the same\n");
 
   if(s1->nb_parameters != s2->nb_parameters ){
-    CONVERTER_warning("nb_paramters not equal! \n");
+    CONVERTER_info("nb_paramters not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop nb_parameters are the same\n");
+  //else
+  //  printf("scoplib scop nb_parameters are the same\n");
 
   if(!convert_scoplib_strings_equal(s1->parameters, s2->parameters)){
-    CONVERTER_warning("paramters not equal! \n");
+    CONVERTER_info("paramters not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop parameters are the same\n");
+  //else
+  //  printf("scoplib scop parameters are the same\n");
 
   if(s1->nb_arrays != s2->nb_arrays ){
-    CONVERTER_warning("nb_arrasy not equal! \n");
+    CONVERTER_info("nb_arrasy not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop nb_arrays are the same\n");
+  //else
+  //  printf("scoplib scop nb_arrays are the same\n");
 
   if(!convert_scoplib_strings_equal(s1->arrays, s2->arrays)){
-    CONVERTER_warning("arrays not equal! \n");
+    CONVERTER_info("arrays not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop arrays are the same\n");
+  //else
+  //  printf("scoplib scop arrays are the same\n");
 
   if(!convert_scoplib_statement_equal(s1->statement, s2->statement)){
-    CONVERTER_warning("statements not equal! \n");
+    CONVERTER_info("statements not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop statements are the same\n");
+  //else
+  //  printf("scoplib scop statements are the same\n");
 
   //strcmp returns non-zero if strings not equal
   if(strcmp(s1->optiontags, s2->optiontags)){
-    CONVERTER_warning("optiontags not equal! \n");
+    CONVERTER_info("optiontags not equal! \n");
     return 0;
   }
-  else
-    printf("scoplib scop optiontags are the same\n");
+  //else
+  //  printf("scoplib scop optiontags are the same\n");
 
   // usr defined hj
 
@@ -730,7 +739,7 @@ scoplib_scop_p  convert_scop_osl2scoplib( osl_scop_p inscop){
   return out_scop;
 
   if (osl_scop_integrity_check(inscop) == 0)
-    CONVERTER_warning("OpenScop integrity check failed. Something may go wrong.");
+    CONVERTER_warning("OSL integrity check failed. Something may go wrong.");
   //TODO: return here?
 
 //  for(; inscop; inscop=inscop->next){
