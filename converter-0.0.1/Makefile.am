@@ -68,7 +68,11 @@ YFLAGS = -y -d
 libconverter_la_LIBADD   = @OSL_LIBS@ @SCOPLIB_LIBS@ $(OSL_LA)
 libconverter_la_CPPFLAGS = @OSL_CPPFLAGS@ @SCOPLIB_CPPFLAGS@ -g
 libconverter_la_LDFLAGS  = @OSL_LDFLAGS@ @SCOPLIB_LDFLAGS@
-libconverter_la_SOURCES  =
+libconverter_la_SOURCES  = \
+			source/converter.c \
+			source/osl2scoplib.c \
+			source/scoplib2osl.c \
+			source/converter_int.c	
 
 #############################################################################
 
