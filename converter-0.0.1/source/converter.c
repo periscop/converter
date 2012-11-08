@@ -54,7 +54,7 @@ int main( int argc, char* argv[]){
   //convert osl to scoplib
   scoplib_scop_p scop2 = convert_scop_osl2scoplib(scop1);
   if(scop2==NULL)
-  printf("OSL to Scoplib conversion failed\n");
+  	printf("OSL to Scoplib conversion failed\n");
   //scoplib_scop_print_structure(stdout, scop2, 0);
   //print scoplib scop to file
   sprintf(o_filename, "%s.scoplib", argv[2]);
