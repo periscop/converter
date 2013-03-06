@@ -606,8 +606,7 @@ void convert_dep_osl2scoplib(osl_scop_p inscop, scoplib_scop_p outscop){
        in_acc=in_acc->next;
      }
      int src_arr_id = osl_int_get_si(in_acc->elt->precision,
-                                     in_acc->elt->m[0], 
-                                     in_acc->elt->nb_columns-1);
+                                 in_acc->elt->m[0][in_acc->elt->nb_columns-1]);
 
      int t_ref_index= 0;
      in_acc = gen_dep->stmt_target_ptr->access;
@@ -627,8 +626,7 @@ void convert_dep_osl2scoplib(osl_scop_p inscop, scoplib_scop_p outscop){
        in_acc=in_acc->next;
      }
      int tgt_arr_id = osl_int_get_si(in_acc->elt->precision,
-                                     in_acc->elt->m[0], 
-                                     in_acc->elt->nb_columns-1);
+                                 in_acc->elt->m[0][in_acc->elt->nb_columns-1]);
 
 
 
@@ -662,7 +660,8 @@ void convert_dep_osl2scoplib(osl_scop_p inscop, scoplib_scop_p outscop){
 
    //update outscop with dependencies
    convert_candl_dependence_update_scop_with_deps(outscop, cdep);
-
+   
+   if(cdep) candl_dependence_free(cdep);
 }
 
 
@@ -742,8 +741,7 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
    for (j=0;j<=s_dom_output_dims; j++)
      convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][j]),
                                      in_dep->domain->precision,
-                                     in_dep->domain->m[osl_constraint],
-                                     j );
+                                     in_dep->domain->m[osl_constraint][j] );
      
 
    // copy localdims - not supprted by converter
@@ -756,10 +754,9 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
    scoplib_index = slib_ind_params;
    for (j=0; j<nb_pars+1; j++)
      convert_int_assign_osl2scoplib(
-                                  &(m->p[scoplib_constraint][scoplib_index+j]),
-                                  in_dep->domain->precision,
-                                  in_dep->domain->m[osl_constraint],
-                                  osl_index+j);
+                               &(m->p[scoplib_constraint][scoplib_index+j]),
+                               in_dep->domain->precision,
+                               in_dep->domain->m[osl_constraint][osl_index+j]);
 
    osl_constraint++;
    scoplib_constraint++;
@@ -772,16 +769,15 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
    //copy first column
    convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][0]),
                                     in_dep->domain->precision,
-                                    in_dep->domain->m[osl_constraint], 0);
+                                    in_dep->domain->m[osl_constraint][0]);
    //start of matrix
    osl_index = 1 + nb_output_dims;
    scoplib_index = slib_ind_target_domain;
    for (j=0;j<t_dom_output_dims; j++)
      convert_int_assign_osl2scoplib(
-                                  &(m->p[scoplib_constraint][scoplib_index+j]),
-                                  in_dep->domain->precision,
-                                  in_dep->domain->m[osl_constraint],
-                                  osl_index+j);
+                               &(m->p[scoplib_constraint][scoplib_index+j]),
+                               in_dep->domain->precision,
+                               in_dep->domain->m[osl_constraint][osl_index+j]);
      
    // copy local dims - not supported in converter
    if(t_domain->nb_local_dims)
@@ -792,10 +788,9 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
    scoplib_index = slib_ind_params;
    for (j=0; j<nb_pars+1; j++)
      convert_int_assign_osl2scoplib(
-                                  &(m->p[scoplib_constraint][scoplib_index+j]),
-                                  in_dep->domain->precision,
-                                  in_dep->domain->m[osl_constraint],
-                                  osl_index+j);
+                               &(m->p[scoplib_constraint][scoplib_index+j]),
+                               in_dep->domain->precision,
+                               in_dep->domain->m[osl_constraint][osl_index+j]);
 
    scoplib_constraint++;
    osl_constraint++;
@@ -822,18 +817,16 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
 
    for (j=0; j<s_access->nb_input_dims; j++){
      convert_int_assign_osl2scoplib(
-                                 &(m->p[scoplib_constraint][scoplib_s_index+j]),
-                                 in_dep->domain->precision,
-                                 in_dep->domain->m[osl_constraint],
-                                 osl_s_index+j);
+                              &(m->p[scoplib_constraint][scoplib_s_index+j]),
+                              in_dep->domain->precision,
+                              in_dep->domain->m[osl_constraint][osl_s_index+j]);
    }
 
    for (j=0; j<t_access->nb_input_dims; j++){ //t_acc_dims==s_acc_dims
      convert_int_assign_osl2scoplib(
                                  &(m->p[scoplib_constraint][scoplib_t_index+j]),
                                  in_dep->domain->precision,
-                            in_dep->domain->m[osl_constraint+s_access->nb_rows],
-                                 osl_t_index+j);
+          in_dep->domain->m[osl_constraint+s_access->nb_rows][osl_t_index+j]);
    }
 
    //copy local dimensions - not supported by converter
@@ -846,12 +839,10 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
    for (j=0; j<nb_pars+1; j++){
      //get src params
      int isrc_param = osl_int_get_si(in_dep->domain->precision,
-                              in_dep->domain->m[osl_constraint],
-                              osl_index+j);
+                              in_dep->domain->m[osl_constraint][osl_index+j]);
      //get tgt params
      int itgt_param = osl_int_get_si(in_dep->domain->precision,
-                            in_dep->domain->m[osl_constraint+s_access->nb_rows],
-                                    osl_index+j);
+             in_dep->domain->m[osl_constraint+s_access->nb_rows][osl_index+j]);
      //convert ints to scoplib_int_t
      scoplib_int_t tgt_param;
      scoplib_int_t src_param;
@@ -863,6 +854,9 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
      SCOPVAL_subtract((m->p[scoplib_constraint][scoplib_index+j]),
                       src_param,
                       tgt_param);
+
+     SCOPVAL_clear(tgt_param);
+     SCOPVAL_clear(src_param);
    }
 
    scoplib_constraint++;
@@ -889,25 +883,22 @@ scoplib_matrix_p convert_dep_domain_osl2scoplib(osl_dependence_p in_dep){
 
    convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][0]),
                                     in_dep->domain->precision,
-                                    in_dep->domain->m[osl_constraint], 0);
+                                    in_dep->domain->m[osl_constraint][0]);
 
    // copy subscript equalities
    convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][scoplib_s_index+i]),
                                     in_dep->domain->precision,
-                                    in_dep->domain->m[osl_constraint],
-                                    osl_s_index+i);
+                             in_dep->domain->m[osl_constraint][osl_s_index+i]);
    convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][scoplib_t_index+i]),
                                     in_dep->domain->precision,
-                                    in_dep->domain->m[osl_constraint],
-                                    osl_t_index+i);
+                             in_dep->domain->m[osl_constraint][osl_t_index+i]);
 
    // copy params -> not applicable here
 
    // copy const == last column
    convert_int_assign_osl2scoplib(&(m->p[scoplib_constraint][m->NbColumns-1]),
                                     in_dep->domain->precision,
-                                    in_dep->domain->m[osl_constraint],
-                                    in_dep->domain->nb_columns-1);
+         in_dep->domain->m[osl_constraint][in_dep->domain->nb_columns-1]);
 
    osl_constraint++;
    scoplib_constraint++;
@@ -1134,7 +1125,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    int scoplib_index = 0;
    for(j=0; j<=s_dom_output_dims; j++){
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], osl_index+j,
+                                    &m->m[osl_constraint][osl_index+j],
                            dom->p[scoplib_constraint][scoplib_index+j]);
    }
 
@@ -1145,7 +1136,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    scoplib_index = scoplib_param_index;
    for(j=0; j< nb_par+1; j++){
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], osl_index+j,
+                                    &m->m[osl_constraint][osl_index+j],
                            dom->p[scoplib_constraint][scoplib_index+j]);
    }
 
@@ -1161,7 +1152,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
  for(i=0; i< stmt_t->domain->elt->NbRows; i++){
    // copy first column
    convert_int_assign_scoplib2osl(m->precision,
-                                  m->m[osl_constraint], 0,
+                                  &m->m[osl_constraint][0],
                          dom->p[scoplib_constraint][0]);
 
    // copy matrix start
@@ -1169,7 +1160,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    int scoplib_index = scoplib_t_dom_index;
    for(j=0; j<t_dom_output_dims; j++){
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], osl_index+j,
+                                    &m->m[osl_constraint][osl_index+j],
                            dom->p[scoplib_constraint][scoplib_index+j]);
    }
 
@@ -1180,7 +1171,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    scoplib_index = scoplib_param_index;
    for(j=0; j< nb_par+1; j++){
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], osl_index+j,
+                                    &m->m[osl_constraint][osl_index+j],
                            dom->p[scoplib_constraint][scoplib_index+j]);
    }
 
@@ -1198,43 +1189,39 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    if(i==0){   // creating the Array_ID line first
      // copy first column
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], 0,
-                    0);
+                    &m->m[osl_constraint][0], 0);
   
      //set the output dims
      int osl_index = osl_s_acc_index;
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], osl_index+i, //using "i"
-                    -1);
+                    &m->m[osl_constraint][osl_index+i], -1); //using "i"
   
      //copy const
      long int value = -1;
      value = SCOPVAL_get_si(s_array->p[in_dep->ref_source][0]);
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], m->nb_columns-1,
-                    value);
+                    &m->m[osl_constraint][m->nb_columns-1], value);
   
      osl_constraint++;
    }
    else{  // the rest of the dimensions
      // copy first column
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], 0,
+                                    &m->m[osl_constraint][0],
                            dom->p[scoplib_constraint][0]);
   
      //set the output dims
      int osl_index = osl_s_acc_index;
      int scoplib_index = -1;
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], osl_index+i, //using "i"
-                    -1);
+                    &m->m[osl_constraint][osl_index+i], -1);//using "i"
   
      //copy the input dims
      osl_index = 1;
      scoplib_index = 1;
      for(j=0; j< s_dom_output_dims; j++){
        convert_int_assign_scoplib2osl(m->precision,
-                                      m->m[osl_constraint], osl_index+j,
+                                      &m->m[osl_constraint][osl_index+j],
                              dom->p[scoplib_constraint][scoplib_index+j]);
      }
   
@@ -1245,16 +1232,16 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
      int scoplib_index_acc_param = s_array->NbColumns - nb_par - 1;//1 -> const
      for(j=0; j< nb_par; j++){
        convert_int_assign_scoplib2osl(m->precision,
-                                      m->m[osl_constraint], osl_index+j,
+                                      &m->m[osl_constraint][osl_index+j],
               s_array->p[in_dep->ref_source+i-1][scoplib_index_acc_param+j]);
      }
      
      //copy const
      long int value = -1;
-     value = SCOPVAL_get_si(s_array->p[in_dep->ref_source+i-1][s_array->NbColumns-1]);
+     value = 
+       SCOPVAL_get_si(s_array->p[in_dep->ref_source+i-1][s_array->NbColumns-1]);
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], m->nb_columns-1,
-                    value);
+                    &m->m[osl_constraint][m->nb_columns-1], value);
   
      osl_constraint++;
      scoplib_constraint++;
@@ -1270,13 +1257,12 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
    if(i==0){ // create the Array_ID line first
      // copy first column
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], 0,
-                    0);
+                    &m->m[osl_constraint][0], 0);
   
      //set the output dims
      int osl_index = osl_t_acc_index;
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], osl_index+i, //using "i"
+                    &m->m[osl_constraint][osl_index+i], //using "i"
                     1);  //1: as target is -ve of source
   
      //copy const
@@ -1284,22 +1270,24 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
      SCOPVAL_init_set_si(value, -1);
      SCOPVAL_oppose(value, t_array->p[in_dep->ref_target][0]); //target is -ve
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], m->nb_columns-1,
+                    &m->m[osl_constraint][m->nb_columns-1],
                     SCOPVAL_get_si(value) );
+
+     SCOPVAL_clear(value);
   
      osl_constraint++;
    }
    else{  // rest of the values
      // copy first column
      convert_int_assign_scoplib2osl(m->precision,
-                                    m->m[osl_constraint], 0,
+                                    &m->m[osl_constraint][0],
                            dom->p[scoplib_constraint][0]);
   
      //set the output dims
      int osl_index = osl_t_acc_index;
      int scoplib_index = -1;
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], osl_index+i, //using "i"
+                    &m->m[osl_constraint][osl_index+i], //using "i"
                     1);  //1: as target is -ve of source
   
      //copy the input dims
@@ -1307,7 +1295,7 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
      scoplib_index = scoplib_t_dom_index;
      for(j=0; j< t_dom_output_dims; j++){
        convert_int_assign_scoplib2osl(m->precision,
-                                      m->m[osl_constraint], osl_index+j,
+                                      &m->m[osl_constraint][osl_index+j],
                              dom->p[scoplib_constraint][scoplib_index+j]);
      }
   
@@ -1317,12 +1305,12 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
      int scoplib_index_acc_param = t_array->NbColumns - nb_par - 1;//1 -> const
      for(j=0; j< nb_par; j++){
        convert_int_assign_scoplib2osl(m->precision,
-                                      m->m[osl_constraint], osl_index+j,
+                                      &m->m[osl_constraint][osl_index+j],
            t_array->p[in_dep->ref_target+i-1][scoplib_index_acc_param+j]);
 
        osl_int_oppose(m->precision,
-                      m->m[osl_constraint], osl_index+j,
-                      m->m[osl_constraint], osl_index+j);
+                      &m->m[osl_constraint][osl_index+j],
+                      m->m[osl_constraint][osl_index+j]);
      }
      
      //copy const
@@ -1333,11 +1321,11 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
        value = SCOPVAL_get_si(t_array->p[in_dep->ref_target+i-1][t_array->NbColumns-1]);
   
      osl_int_set_si(m->precision,
-                    m->m[osl_constraint], m->nb_columns-1,
+                    &m->m[osl_constraint][m->nb_columns-1],
                     value);
      osl_int_oppose(m->precision,
-                    m->m[osl_constraint], m->nb_columns-1,
-                    m->m[osl_constraint], m->nb_columns-1);
+                    &m->m[osl_constraint][m->nb_columns-1],
+                    m->m[osl_constraint][m->nb_columns-1]);
   
      osl_constraint++;
      scoplib_constraint++;
@@ -1351,8 +1339,8 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
  int osl_index = osl_s_acc_index;
  int osl_index_2 = osl_t_acc_index;
  for(i=0; i< min_depth; i++){
-   osl_int_set_si(m->precision, m->m[osl_constraint], osl_index+i, -1); 
-   osl_int_set_si(m->precision, m->m[osl_constraint], osl_index_2+i, 1); 
+   osl_int_set_si(m->precision, &m->m[osl_constraint][osl_index+i], -1); 
+   osl_int_set_si(m->precision, &m->m[osl_constraint][osl_index_2+i], 1); 
    osl_constraint++;
  }
 
@@ -1367,20 +1355,20 @@ osl_relation_p convert_dep_domain_scoplib2osl(candl_dependence_p in_dep,
  for(i=0; i< in_dep->depth; i++){
    // copy first column
    convert_int_assign_scoplib2osl(m->precision,
-                                  m->m[osl_constraint], 0,
+                                  &m->m[osl_constraint][0],
                          dom->p[scoplib_constraint][0]);
 
 
    convert_int_assign_scoplib2osl(m->precision,
-                                  m->m[osl_constraint], osl_index+i,
+                                  &m->m[osl_constraint][osl_index+i],
                          dom->p[scoplib_constraint][scoplib_index+i]);
    convert_int_assign_scoplib2osl(m->precision,
-                                  m->m[osl_constraint], osl_index_2+i,
+                                  &m->m[osl_constraint][osl_index_2+i],
                          dom->p[scoplib_constraint][scoplib_index_2+i]);
 
    //last column
    convert_int_assign_scoplib2osl(m->precision,
-                                  m->m[osl_constraint], m->nb_columns-1,
+                                  &m->m[osl_constraint][m->nb_columns-1],
                          dom->p[scoplib_constraint][dom->NbColumns-1]);
 
    osl_constraint++;

@@ -124,10 +124,25 @@ int main( int argc, char* argv[]){
 
 
 
-  osl_scop_free( scop1 );
-  osl_scop_free( scop4 );
-  scoplib_scop_free (scop2 );
-  scoplib_scop_free (scop3 );
+  if(scop0) scoplib_scop_free( scop0 );
+  if(scop1){ 
+    osl_statement_p stmt = scop1->statement;
+    while(stmt){ 
+      candl_statement_usr_cleanup(stmt); 
+      stmt = stmt->next;
+    }
+    osl_scop_free( scop1 );
+  }
+  if(scop4){ 
+    osl_statement_p stmt = scop4->statement;
+    while(stmt){ 
+      candl_statement_usr_cleanup(stmt); 
+      stmt = stmt->next;
+    }
+    osl_scop_free( scop4 );
+  }
+  if(scop2) scoplib_scop_free (scop2 );
+  if(scop3) scoplib_scop_free (scop3 );
 
   return 0;
 }

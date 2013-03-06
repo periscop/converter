@@ -44,7 +44,7 @@ osl_relation_p convert_matrix_scoplib2osl( scoplib_matrix_p m){
   //copy content
   for(i=0; i< m->NbRows; i++)
     for(j=0; j< m->NbColumns; j++){
-      convert_int_assign_scoplib2osl(out_rln->precision, out_rln->m[i], j,
+      convert_int_assign_scoplib2osl(out_rln->precision, &out_rln->m[i][j],
                                       m->p[i][j] );
     }
 
@@ -135,25 +135,27 @@ osl_relation_p convert_scattering_scoplib2osl( scoplib_matrix_p m,
   for(i=0; i< out_rln->nb_rows; i++)
     for(j=0; j< out_rln->nb_columns; j++){
       if(j==0)  // eq/neq (first) column
-        convert_int_assign_scoplib2osl(out_rln->precision,out_rln->m[i], j,
+        convert_int_assign_scoplib2osl(out_rln->precision,&out_rln->m[i][j],
                                                 m->p[i][j]); 
       else if(j>0 && j<=(nb_output_dims)) // for output dimentions
         if( j==(i+1) )   //identification diagonal
           {
           scoplib_int_t dummy;
           SCOPVAL_init_set_si(dummy, -1);
-          convert_int_assign_scoplib2osl(out_rln->precision,out_rln->m[i], j,
+          convert_int_assign_scoplib2osl(out_rln->precision,&out_rln->m[i][j],
                                              dummy); 
+          SCOPVAL_clear(dummy);
           }
         else  // non diagonal zeros
           {
           scoplib_int_t dummy;
           SCOPVAL_init_set_si(dummy, 0);
-          convert_int_assign_scoplib2osl(out_rln->precision,out_rln->m[i], j,
+          convert_int_assign_scoplib2osl(out_rln->precision,&out_rln->m[i][j],
                                              dummy); 
+          SCOPVAL_clear(dummy);
           }
       else  // input dimensions + parameters + constant
-          convert_int_assign_scoplib2osl(out_rln->precision,out_rln->m[i], j,
+          convert_int_assign_scoplib2osl(out_rln->precision,&out_rln->m[i][j],
                                             m->p[i][j-nb_output_dims]); 
     }
 
@@ -431,29 +433,33 @@ osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix,
         {
         scoplib_int_t dummy;
         SCOPVAL_init_set_si(dummy, 0);
-        convert_int_assign_scoplib2osl(rl->precision, rl->m[0], k,
+        convert_int_assign_scoplib2osl(rl->precision, &rl->m[0][k],
                                            dummy);
+        SCOPVAL_clear(dummy);
         }
       else if( k==(0+1) )   // Arr
         {
         scoplib_int_t dummy;
         SCOPVAL_init_set_si(dummy, -1);
-        convert_int_assign_scoplib2osl(rl->precision, rl->m[0], k,
+        convert_int_assign_scoplib2osl(rl->precision, &rl->m[0][k],
                                            dummy);
+        SCOPVAL_clear(dummy);
         }
       else if(k==(nb_cols-1))  //Arr_id
         {
         scoplib_int_t dummy;
         SCOPVAL_init_set_si(dummy, array_id[i]);
-        convert_int_assign_scoplib2osl(rl->precision, rl->m[0], k, 
+        convert_int_assign_scoplib2osl(rl->precision, &rl->m[0][k], 
                                             dummy);
+        SCOPVAL_clear(dummy);
         }
       else // non diagonal zeros
         {
         scoplib_int_t dummy;
         SCOPVAL_init_set_si(dummy, 0);
-        convert_int_assign_scoplib2osl(rl->precision, rl->m[0], k,
+        convert_int_assign_scoplib2osl(rl->precision, &rl->m[0][k],
                                            dummy);
+        SCOPVAL_clear(dummy);
         }
     }
      
@@ -466,27 +472,30 @@ osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix,
             {
             scoplib_int_t dummy;
             SCOPVAL_init_set_si(dummy, 0);
-            convert_int_assign_scoplib2osl(rl->precision, rl->m[j+1], k,
+            convert_int_assign_scoplib2osl(rl->precision, &rl->m[j+1][k],
                                                dummy);
+            SCOPVAL_clear(dummy);
             }
           else if(k>0 && k<=(nb_output_dims)){ // for output dimentions
             if( k==(j+2) )   //identification diagonal
               {
               scoplib_int_t dummy;
               SCOPVAL_init_set_si(dummy, -1);
-              convert_int_assign_scoplib2osl(rl->precision, rl->m[j+1], k,
+              convert_int_assign_scoplib2osl(rl->precision, &rl->m[j+1][k],
                                                 dummy);
+              SCOPVAL_clear(dummy);
               }
             else  // non diagonal zeros
               {
               scoplib_int_t dummy;
               SCOPVAL_init_set_si(dummy, 0);
-              convert_int_assign_scoplib2osl(rl->precision, rl->m[j+1], k,
+              convert_int_assign_scoplib2osl(rl->precision, &rl->m[j+1][k],
                                                 dummy);
+              SCOPVAL_clear(dummy);
               }
           }
           else  // input dimensions + parameters + constant
-            convert_int_assign_scoplib2osl(rl->precision, rl->m[j+1], k,
+            convert_int_assign_scoplib2osl(rl->precision, &rl->m[j+1][k],
                                               m->p[m_row][k-nb_output_dims]);
         }
 
@@ -511,7 +520,14 @@ osl_relation_list_p convert_access_scoplib2osl( scoplib_matrix_p in_matrix,
   
   } //for num_arrays
 
-  //TODO: free the above allocated arrays
+  // free the above allocated arrays
+  if(array_id != NULL)
+    free(array_id);
+  if(array_has_dims != NULL)
+    free(array_has_dims);
+  if(array_dims != NULL)
+    free(array_dims);
+
   return out_rln_list;
 }
 
@@ -531,7 +547,6 @@ osl_generic_p convert_body_scoplib2osl(int nb_iterators, char **iter,
 
   osl_generic_p out_gen = osl_generic_malloc();
   osl_body_p out_body = osl_body_malloc();
-  out_gen->interface = osl_body_interface();
   
   //iterators
   char** iters_cpy = NULL;
@@ -598,7 +613,7 @@ osl_statement_p convert_statement_scoplib2osl( scoplib_statement_p in_stmt,
     if(!tmp_rl){
       tmp_stmt->access = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, 
                                                           OSL_TYPE_WRITE);
-    }
+}
     else{
       tmp_rl->next = convert_access_scoplib2osl(s->write, in_ctx, in_stmt, 
                                                          OSL_TYPE_WRITE);
@@ -1098,6 +1113,8 @@ osl_dependence_p convert_candl_dependence_read_one_dep_2(char* str, char** next,
                                 dep->ref_target_access_ptr->nb_local_dims;
     
 
+  candl_dependence_free(old_dep);
+
   return dep;
 }
 
@@ -1254,11 +1271,16 @@ osl_scop_p   convert_scop_scoplib2osl( scoplib_scop_p inscop){
   if(content==NULL)
     tmp_scop->extension = NULL;
   else{ // create an extension
-    osl_arrays_p arrays = osl_arrays_sread( &content );
+    char* content_cpy = content;
+    osl_arrays_p arrays = osl_arrays_sread( &content_cpy );
     tmp_scop->extension = osl_generic_malloc();
     tmp_scop->extension->data = arrays;
     tmp_scop->extension->interface = osl_arrays_interface();
   }
+
+  if(content!=NULL);
+    free(content);
+
 
   //get dependence dependence
   osl_generic_p ext = convert_dep_scoplib2osl(inscop, tmp_scop);

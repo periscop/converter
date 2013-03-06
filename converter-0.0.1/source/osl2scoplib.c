@@ -44,7 +44,7 @@ scoplib_matrix_p convert_relation_osl2scoplib(osl_relation_p in_rln){
   for(i=0; i < in_rln->nb_rows; i++){
     for(j=0; j < in_rln->nb_columns; j++){
        convert_int_assign_osl2scoplib(&(ctx->p[i][j]),
-                                     in_rln->precision, in_rln->m[i],j);
+                                     in_rln->precision, in_rln->m[i][j]);
     }
   }
 
@@ -116,14 +116,14 @@ scoplib_matrix_p convert_scattering_osl2scoplib(osl_relation_p scattering){
     //copy the eq/neq column
     for(i=0; i < scattering->nb_rows; i++)
       convert_int_assign_osl2scoplib(&scat->p[i][0],
-                      scattering->precision, scattering->m[i], 0); 
+                      scattering->precision, scattering->m[i][0]); 
 
     //copy input_dims and the rest
     for(i=0; i < scattering->nb_rows; i++)
       for(j=scattering->nb_output_dims+1; j < scattering->nb_columns; j++)
         convert_int_assign_osl2scoplib(
                             &scat->p[i][j-(scattering->nb_output_dims)],
-                            scattering->precision, scattering->m[i], j); 
+                            scattering->precision, scattering->m[i][j]); 
 
     return scat;
 }
@@ -237,14 +237,15 @@ scoplib_matrix_p convert_access_osl2scoplib(osl_relation_list_p head,
       SCOPVAL_init_set_si(array_id, 0);
 
       convert_int_assign_osl2scoplib(&array_id, 
-                    head->elt->precision, head->elt->m[0],
-                        head->elt->nb_columns-1);
+                head->elt->precision, head->elt->m[0][head->elt->nb_columns-1]);
 
       int first_access = 1;
       // arrange dimensions in order ????
       int k=0;
       // assign array id here, as some matrices have only one row!
       SCOPVAL_assign(m_read->p[i][0], array_id);
+      SCOPVAL_clear(array_id);
+
       if(head->elt->nb_rows==1) i++;  //single row matrix
 
       //skip the frist row; array_id already been recovered
@@ -262,7 +263,7 @@ scoplib_matrix_p convert_access_osl2scoplib(osl_relation_list_p head,
       //copy matrix, but skip output_dims
           convert_int_assign_osl2scoplib(
                                 &m_read->p[i][j-head->elt->nb_output_dims],
-                                head->elt->precision, head->elt->m[k], j);
+                                head->elt->precision, head->elt->m[k][j]);
         }
       }
     }
@@ -306,6 +307,36 @@ char * convert_osl_strings_sprint(osl_strings_p strings) {
   }
 
   return string;
+}
+
+/*
+* this functions converts an osl strings structure into a scoplib strings
+*
+* \param[in] str        osl strings structure
+* \return               scoplib strings
+*/
+char ** convert_strings_osl2scoplib(osl_strings_p str){
+
+  if(str==NULL)
+      return NULL;
+
+  int i=0;
+  char **out_str = NULL;
+  int nb_strings=0;
+
+  if ((nb_strings = osl_strings_size(str)) == 0){ 
+    CONVERTER_malloc(out_str, char**, 1*sizeof(char*) );
+    *out_str=NULL;
+    return out_str;
+  }
+
+  CONVERTER_malloc(out_str, char **, (nb_strings + 1) * sizeof(char *));
+  out_str[nb_strings] = NULL;
+  for (i = 0; i < nb_strings; i++)
+    CONVERTER_strdup(out_str[i], str->string[i]);
+
+
+  return out_str;
 }
 
 
@@ -373,8 +404,8 @@ scoplib_statement_p convert_statement_osl2scoplib(osl_statement_p p,
       CONVERTER_warning("Statement body not found!!\n");
     else{
       stmt->nb_iterators = osl_strings_size(stmt_body->iterators);
-      osl_strings_p iters = osl_strings_clone(stmt_body->iterators);
-      stmt->iterators = iters->string;
+      
+      stmt->iterators = convert_strings_osl2scoplib(stmt_body->iterators);
       //body
       stmt->body = convert_osl_strings_sprint(stmt_body->expression);
     }
@@ -466,36 +497,6 @@ char * convert_osl_arrays_sprint(osl_strings_p arrays) {
   return string;
 }
 
-
-/*
-* this functions converts an osl strings structure into a scoplib strings
-*
-* \param[in] str        osl strings structure
-* \return               scoplib strings
-*/
-char ** convert_strings_osl2scoplib(osl_strings_p str){
-
-  if(str==NULL)
-      return NULL;
-
-  int i=0;
-  char **out_str = NULL;
-  int nb_strings=0;
-
-  if ((nb_strings = osl_strings_size(str)) == 0){ 
-    CONVERTER_malloc(out_str, char**, 1*sizeof(char*) );
-    *out_str=NULL;
-    return out_str;
-  }
-
-  CONVERTER_malloc(out_str, char **, (nb_strings + 1) * sizeof(char *));
-  out_str[nb_strings] = NULL;
-  for (i = 0; i < nb_strings; i++)
-    CONVERTER_strdup(out_str[i], str->string[i]);
-
-
-  return out_str;
-}
 
 
 void convert_scoplib_strings_print(char** s1){
@@ -828,7 +829,7 @@ scoplib_scop_p  convert_scop_osl2scoplib( osl_scop_p inscop){
                                                       precision); 
   //registry
   //externsion
-  osl_names_p names;
+  osl_names_p names = NULL;
   names = convert_osl_scop_names(inscop);
   //externsion -> arrays
   osl_arrays_p arrays = osl_generic_lookup(inscop->extension, 
@@ -844,7 +845,6 @@ scoplib_scop_p  convert_scop_osl2scoplib( osl_scop_p inscop){
     tmp_scop->arrays = convert_strings_osl2scoplib(names->arrays);
   }
 
-
   //optoin tags
   // arrays
   char *string  = NULL;
@@ -855,10 +855,16 @@ scoplib_scop_p  convert_scop_osl2scoplib( osl_scop_p inscop){
     string = convert_osl_arrays_sprint(names->arrays);
   }
 
+
+  if(names)
+    osl_names_free(names);
+
+
   char *new_str = NULL;
   if (string != NULL) {
     OSL_malloc(new_str, char *, (strlen(string) + 20) * sizeof(char));
     sprintf(new_str, "<arrays>\n%s</arrays>\n", string);
+    free(string);
   }
   tmp_scop->optiontags = new_str;
     

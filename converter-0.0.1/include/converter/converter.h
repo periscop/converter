@@ -4,6 +4,10 @@
 //#define OSL_GMP_IS_HERE
 #include <string.h>  // for strdup
 
+#ifdef OSL_GMP_IS_HERE
+#include <gmp.h>
+#endif
+
 #include "scoplib/scop.h"
 #include "osl/scop.h"
 #include "converter/converter_int.h"
