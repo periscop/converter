@@ -39,11 +39,6 @@
 #
 #############################################################################
 
-if BUNDLED_OSL
-    MAYBE_OSL = osl
-    OSL_LA = $(top_builddir)/osl/source/libosl.la
-endif
-
 SUBDIRS         = $(MAYBE_OSL) doc
 DIST_SUBDIRS    = $(MAYBE_OSL) doc
 ACLOCAL_AMFLAGS = -I m4
